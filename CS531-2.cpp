@@ -3,11 +3,70 @@
 
 #include "stdafx.h"
 
-struct state {
+class state {
 	// each vector is a peg. index 0 is the bottom, and index size-1 is the top, accessible
 	std::vector<std::vector<int>> pegs;
 
-	int mDisks;
+	int num_disks;
+	int path_cost;
+	bool admissible;
+
+	// for sorting by heuristic
+	int heuristicAdmissible(void) const {
+		// number of disks in the incorrect location
+		// never overestimates -> admissible
+		int score = 0;
+		for(int i = 0; i < num_disks; i++) {
+			if(i >= pegs[0].size()) {
+				score++;
+			}
+			else if(pegs[0][i] != i) {
+				score++;
+			}
+		}
+		return score;
+	}
+
+	int heuristicNonAdmissible(void) const {
+		// right peg, wrong position = 1...wrong peg = 2
+		// nonadmissible because it can overestimate
+		int score = 0;
+		for(int i = 0; i < num_disks; i++) {
+			if(i >= pegs[0].size()) {
+				score += 2;
+			}
+			else if(pegs[0][i] != i) {
+				score++;
+			}
+		}
+		return score;
+	}
+
+public:
+	// compare f(n) = g(n) + h(n)
+	// implemented as operator to take advantage of std::sort
+	bool operator < (const state& cmp) const {
+		if(admissible) {
+			return (heuristicAdmissible() + path_cost) < (cmp.heuristicAdmissible() + path_cost);
+		}
+		else {
+			return (heuristicNonAdmissible() + path_cost) < (cmp.heuristicNonAdmissible() + path_cost);
+		}
+	}
+
+	// checking if states have already been explored
+	bool operator == (const state& cmp) const {
+		for(int i = 0; i < pegs.size(); i++) {
+			if(pegs[i] != cmp.pegs[i]) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	void addPath() {
+		path_cost++;
+	}
 
 	bool isGoal(void) {
 		for(int i = 0; i < pegs[0].size(); i++) {
@@ -17,8 +76,6 @@ struct state {
 		}
 		return true;
 	};
-
-
 
 	std::vector<state> successors(void) {
 		std::vector<state> succs;
@@ -38,9 +95,10 @@ struct state {
 		return succs;
 	};
 
-	state(const state &copy) : pegs(copy.pegs), mDisks(copy.mDisks) {};
 
-	state(int n, int problem) : mDisks(n) {
+	state(const state &copy) : pegs(copy.pegs), num_disks(copy.num_disks), path_cost(copy.path_cost), admissible(copy.admissible) {};
+
+	state(int n, int problem, bool heuristic) : num_disks(n), admissible(heuristic), path_cost(0) {
 		// hard-coded problems for different sizes
 		static const int size4[20][4] = {
 			{2,0,1,3},
@@ -160,16 +218,44 @@ struct state {
 	};
 };
 
-int heuristicAdmissible(state current) {
-	// number of disks in the incorrect location
-	return 0;
+
+bool aStar(state initial) {
+	std::vector<state> frontier;	
+	std::vector<state> explored;
+	explored.push_back(initial);
+	state current = initial;
+
+	while(!current.isGoal()) {
+		// add current node to 
+		auto succs = current.successors();
+		for(auto succ : succs) {
+			succ.addPath();
+		}
+
+		// make sure we haven't already looked at this successor - if we can't find it in explored, add to frontier
+		for(int i = 0; i < succs.size(); i++) {
+			if(std::find(explored.begin(), explored.end(), succs[i]) == explored.end()) {
+				frontier.push_back(succs[i]);
+			}
+		}
+
+		// find and expand best node
+		if(frontier.size() == 0) {
+			return false;
+		}
+		std::sort(frontier.begin(), frontier.end());
+		current = frontier.back();
+		frontier.pop_back();
+		explored.push_back(current);
+	} 
+	return true;
 }
 
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	state test = state(4, 4);
-	auto succs = test.successors();
+	state test = state(4, 4, true);
+	aStar(test);
+
 	return 0;
 }
-
