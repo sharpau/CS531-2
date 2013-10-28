@@ -47,6 +47,7 @@ bool aStar(state initial, bool admissible) {
 		explored.push_back(current.current_state);
 	} 
 	// current is our solution! print out initial, moves, and final state
+	current.printHistory();
 	return true;
 }
 

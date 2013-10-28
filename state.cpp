@@ -15,6 +15,9 @@ bool state::operator == (const state& cmp) const {
 }
 
 bool state::isGoal(void) {
+	if(pegs[0].size() != num_disks) {
+		return false;
+	}
 	for(int i = 0; i < pegs[0].size(); i++) {
 		if(pegs[0][i] != i) {
 			return false;

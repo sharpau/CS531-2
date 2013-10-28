@@ -68,6 +68,13 @@ node::node(state initial, state cur, bool admissible, bool astar, std::vector<st
 	initial_state(initial), current_state(cur), admissible(admissible), astar(astar), moves(moves), path_cost(moves.size())
 { }
 
-void printMoves(void) {
-
+void node:: printHistory(void) {
+	std::cout << "Initial state:\n";
+	initial_state.print();
+	std::cout << "\nMoves:\n";
+	for(auto m : moves) {
+		std::cout << "From peg " << m.first << " to " << m.second << "\n";
+	}
+	std::cout << "\nCurrent state:\n";
+	current_state.print();
 }

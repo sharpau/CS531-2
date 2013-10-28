@@ -28,5 +28,5 @@ public:
 
 	node(state initial, state cur, bool admissible, bool astar, std::vector<std::pair<int, int>> moves = std::vector<std::pair<int, int>>());
 
-	void printMoves();
+	void printHistory();
 };
