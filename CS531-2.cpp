@@ -7,7 +7,7 @@
 
 
 bool aStar(state initial, bool admissible) {
-	std::vector<node> frontier;	
+	std::deque<node> frontier;	
 	std::vector<state> explored;
 	explored.push_back(initial);
 	node current = node(initial, initial, admissible, true);
@@ -24,10 +24,10 @@ bool aStar(state initial, bool admissible) {
 				int take, put;
 				for(int peg = 0; peg < 3; peg++) {
 					if(current.current_state.pegs[peg].size() + 1 == succs[i].pegs[peg].size()) {
-						take = peg;
+						put = peg;
 					}
 					else if(current.current_state.pegs[peg].size() - 1 == succs[i].pegs[peg].size()) {
-						put = peg;
+						take = peg;
 					}
 				}
 				moves.push_back(std::make_pair(take, put));
@@ -42,8 +42,8 @@ bool aStar(state initial, bool admissible) {
 			return false;
 		}
 		std::sort(frontier.begin(), frontier.end());
-		current = frontier.back();
-		frontier.pop_back();
+		current = frontier.front();
+		frontier.pop_front();
 		explored.push_back(current.current_state);
 	} 
 	// current is our solution! print out initial, moves, and final state

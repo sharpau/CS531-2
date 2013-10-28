@@ -69,7 +69,7 @@ node::node(state initial, state cur, bool admissible, bool astar, std::vector<st
 { }
 
 void node:: printHistory(void) {
-	std::cout << "Initial state:\n";
+	std::cout << "\n\nInitial state:\n";
 	initial_state.print();
 	std::cout << "\nMoves:\n";
 	for(auto m : moves) {
