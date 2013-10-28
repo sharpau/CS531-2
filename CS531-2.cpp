@@ -55,6 +55,7 @@ int f_limit;
 
 bool RBFS(node current, int & f_retval, node & n_retval) {
 	if(current.current_state.isGoal()) {
+		current.printHistory();
 		return true;
 	}
 
@@ -64,7 +65,7 @@ bool RBFS(node current, int & f_retval, node & n_retval) {
 		return false;
 	}
 
-	std::vector<node> nodes;
+	std::deque<node> nodes;
 	for(auto s : succs) {
 		//update moves
 		auto moves = current.getMoves();
@@ -87,12 +88,12 @@ bool RBFS(node current, int & f_retval, node & n_retval) {
 	bool result = false;
 	while(!result) {
 		std::sort(nodes.begin(), nodes.end());
-		node & best = nodes.back();
+		node & best = nodes.front();
 		if(best.f_val > f_limit) {
 			f_retval = best.f_val;
 			return false;
 		}
-		int second = nodes[nodes.size() - 2].f_val;
+		int second = nodes[1].f_val;
 		f_limit = std::min(f_limit, second);
 		result = RBFS(best, f_retval, n_retval);
 		best.f_val = f_retval;
@@ -105,8 +106,8 @@ bool RBFS(node current, int & f_retval, node & n_retval) {
 int _tmain(int argc, _TCHAR* argv[])
 {
 	state test = state(4, 4);
-	aStar(test, true);
-	aStar(test, false);
+	//aStar(test, true);
+	//aStar(test, false);
 
 	int f_ret = INT_MAX;
 	node n_ret = node(test, test, true, false);
