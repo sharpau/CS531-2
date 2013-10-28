@@ -162,3 +162,18 @@ state::state(int n, int problem) : num_disks(n) {
 		break;
 	}
 };
+
+void state::print(void) {
+	std::cout << "A: ";
+	for(auto i : pegs[0]) {
+		std::cout << i << ", ";
+	}
+	std::cout << "\nB: ";
+	for(auto i : pegs[1]) {
+		std::cout << i << ", ";
+	}
+	std::cout << "\nC: ";
+	for(auto i : pegs[2]) {
+		std::cout << i << ", ";
+	}
+}

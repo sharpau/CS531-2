@@ -5,18 +5,28 @@
 class node {
 	
 	int path_cost;
-	bool admissible;
-	bool include_path;
+	bool admissible; // which heuristic to use
+	bool astar; // true for a*, false for RBFS
 
 	int heuristicAdmissible(void) const;
 	int heuristicNonAdmissible(void) const;
 
-public:
-	state this_state;
+	std::vector<std::pair<int, int>> moves;
 
+public:
+	state current_state;
+	state initial_state;
+	int f_val; // RBFS only
 
 	bool operator < (const node& cmp) const;
-	int getPath();
 
-	node(state st, bool admissible, bool greedy, int cost);
+
+	int getPath();
+	int getCost();
+	bool getAdmissible();
+	std::vector<std::pair<int, int>> getMoves() { return moves; };
+
+	node(state initial, state cur, bool admissible, bool astar, std::vector<std::pair<int, int>> moves = std::vector<std::pair<int, int>>());
+
+	void printMoves();
 };
