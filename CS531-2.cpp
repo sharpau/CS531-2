@@ -7,14 +7,20 @@
 
 extern unsigned long long heuristic_time;
 
+#define NMAX 10000
+
 struct result {
 	node final_node; // contains initial state, final state, moves, success/fail
 	unsigned long long cpu_total;
 	unsigned long long cpu_heuristic;
+	unsigned int searched;
 
-	result(node final_n, unsigned long long heur_t, unsigned long long cpu_t) : final_node(final_n), cpu_total(cpu_t), cpu_heuristic(heur_t) {};
+	result(node final_n, unsigned long long heur_t, unsigned long long cpu_t, unsigned int searched) : final_node(final_n), cpu_total(cpu_t), cpu_heuristic(heur_t), searched(searched) {};
 };
 
+// for checking vs NMAX
+unsigned int rbfs_expanded;
+unsigned int astar_expanded;
 
 node aStar(state initial, bool admissible) {
 	std::deque<node> frontier;	
@@ -55,16 +61,24 @@ node aStar(state initial, bool admissible) {
 		current = frontier.front();
 		frontier.pop_front();
 		explored.push_back(current.current_state);
+
+		if(explored.size() > NMAX) {
+			// not enough time
+			astar_expanded = explored.size();
+			return current;
+		}
 	} 
 	// current is our solution! print out initial, moves, and final state
-	current.printHistory();
+	//current.printHistory();
 	current.solved = true;
+	astar_expanded = explored.size();
 	return current;
 }
 
+
 node RBFS(node current, int f_limit, int & f_retval) {
 	if(current.current_state.isGoal()) {
-		current.printHistory();
+		//current.printHistory();
 		current.solved = true;
 		return current;
 	}
@@ -99,6 +113,9 @@ node RBFS(node current, int f_limit, int & f_retval) {
 	while(!returned.solved) {
 		std::sort(nodes.begin(), nodes.end());
 		node & best = nodes.front();
+		if(rbfs_expanded++ > NMAX) {
+			return returned;
+		}
 		if(best.f_val > f_limit) {
 			f_retval = best.f_val;
 			return returned;
@@ -119,15 +136,6 @@ node RBFS_start(state initial, bool admissible) {
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	/*state test = state(4, 4);
-	aStar(test, true);
-	aStar(test, false);
-
-	int f_ret = INT_MAX;
-	node n_ret = node(test, test, false, false);
-	n_ret.f_val = n_ret.getCost();
-	RBFS(n_ret, INT_MAX, f_ret, n_ret);*/
-
 	std::vector<result> astar_results;
 	std::vector<result> rbfs_results;
 
@@ -135,23 +143,49 @@ int _tmain(int argc, _TCHAR* argv[])
 	bool heur_vals[2] = {true, false};
 	int size_vals[4] = {4, 5, 6, 7};
 
-	for(auto hv : heur_vals) {
-		for(auto sz : size_vals) {
+	for(auto sz : size_vals) {
+		for(auto hv : heur_vals) {
 			for(int prob_num = 0; prob_num < 20; prob_num++) {
+				std::cout << "size " << sz << " problem " << prob_num << " admissible? " << hv << "\n";
+				astar_expanded = 0;
 				heuristic_time = 0;
 				state initial = state(sz, prob_num);
 				clock_t a_start = clock();
 				node a_solution = aStar(initial, hv);
-				astar_results.push_back(result(a_solution, heuristic_time, clock() - a_start));
+				astar_results.push_back(result(a_solution, heuristic_time, clock() - a_start, astar_expanded));
 				
+				
+				rbfs_expanded = 0;
 				heuristic_time = 0;
 				clock_t b_start = clock();
 				node b_solution = RBFS_start(initial, hv);
-				rbfs_results.push_back(result(b_solution, heuristic_time, clock() - b_start));
+				rbfs_results.push_back(result(b_solution, heuristic_time, clock() - b_start, rbfs_expanded));
 
 			}
 		}
+		std::stringstream afilename;
+		afilename << "astar_results" << std::to_string(sz) << ".csv";
+		std::ofstream a_file(afilename.str());
+		a_file << "algorithm, heuristic, disk_num, moves, solution found?, total cpu ticks, heuristic cpu ticks,\n";
+		for(auto res: astar_results) {
+			a_file << "astar, " << (res.final_node.getAdmissible() ? "admissible, " : "non-admissible, ") << res.final_node.current_state.num_disks \
+				<< ", " << res.final_node.getMoves().size() << ", " << res.final_node.solved << ", " << res.cpu_total << ", " << res.cpu_heuristic << ",\n";
+		}
+		a_file.close();
+
+		std::stringstream bfilename;
+		bfilename << "rbfs_results" << sz << ".csv";
+		std::ofstream b_file(bfilename.str());
+		b_file << "algorithm, heuristic, disk_num, moves, solution found?, total cpu ticks, heuristic cpu ticks,\n";
+		for(auto res: rbfs_results) {
+			b_file << "rbfs, " << (res.final_node.getAdmissible() ? "admissible, " : "non-admissible, ") << res.final_node.current_state.num_disks \
+				<< ", " << res.final_node.getMoves().size() << ", " << res.final_node.solved << ", " << res.cpu_total << ", " << res.cpu_heuristic << ",\n";
+		}
+		b_file.close();
 	}
+
+
+
 
 
 	return 0;
