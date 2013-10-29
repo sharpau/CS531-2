@@ -51,9 +51,7 @@ bool aStar(state initial, bool admissible) {
 	return true;
 }
 
-int f_limit;
-
-bool RBFS(node current, int & f_retval, node & n_retval) {
+bool RBFS(node current, int f_limit, int & f_retval, node & n_retval) {
 	if(current.current_state.isGoal()) {
 		current.printHistory();
 		return true;
@@ -72,10 +70,10 @@ bool RBFS(node current, int & f_retval, node & n_retval) {
 		int take, put;
 		for(int peg = 0; peg < 3; peg++) {
 			if(current.current_state.pegs[peg].size() + 1 == s.pegs[peg].size()) {
-				take = peg;
+				put = peg;
 			}
 			else if(current.current_state.pegs[peg].size() - 1 == s.pegs[peg].size()) {
-				put = peg;
+				take = peg;
 			}
 		}
 		moves.push_back(std::make_pair(take, put));
@@ -94,10 +92,8 @@ bool RBFS(node current, int & f_retval, node & n_retval) {
 			return false;
 		}
 		int second = nodes[1].f_val;
-		f_limit = std::min(f_limit, second);
-		result = RBFS(best, f_retval, n_retval);
+		result = RBFS(best, std::min(f_limit, second), f_retval, n_retval);
 		best.f_val = f_retval;
-		f_limit = f_retval;
 	}
 	return true;
 }
@@ -111,9 +107,8 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	int f_ret = INT_MAX;
 	node n_ret = node(test, test, true, false);
-	f_limit = INT_MAX;
 	n_ret.f_val = n_ret.getCost();
-	RBFS(n_ret, f_ret, n_ret);
+	RBFS(n_ret, INT_MAX, f_ret, n_ret);
 
 	return 0;
 }
