@@ -2,10 +2,13 @@
 #include "stdafx.h"
 #include "node.h"
 
-// for sorting by heuristic
+
+unsigned long long heuristic_time;
+
+// number of disks in the incorrect location
+// never overestimates -> admissible
 int node::heuristicAdmissible(void) const {
-	// number of disks in the incorrect location
-	// never overestimates -> admissible
+	clock_t start = clock();
 	int score = 0;
 	for(int i = 0; i < current_state.num_disks; i++) {
 		if(i >= current_state.pegs[0].size()) {
@@ -15,12 +18,14 @@ int node::heuristicAdmissible(void) const {
 			score++;
 		}
 	}
+	heuristic_time += (clock() - start);
 	return score;
 }
 
+// right peg, wrong position = 1...wrong peg = 2
+// nonadmissible because it can overestimate
 int node::heuristicNonAdmissible(void) const {
-	// right peg, wrong position = 1...wrong peg = 2
-	// nonadmissible because it can overestimate
+	clock_t start = clock();
 	int score = 0;
 	for(int i = 0; i < current_state.num_disks; i++) {
 		if(i >= current_state.pegs[0].size()) {
@@ -30,6 +35,7 @@ int node::heuristicNonAdmissible(void) const {
 			score++;
 		}
 	}
+	heuristic_time += (clock() - start);
 	return score;
 }
 	
@@ -65,7 +71,7 @@ int node::getCost() {
 
 
 node::node(state initial, state cur, bool admissible, bool astar, std::vector<std::pair<int, int>> moves) :
-	initial_state(initial), current_state(cur), admissible(admissible), astar(astar), moves(moves), path_cost(moves.size())
+	initial_state(initial), current_state(cur), admissible(admissible), astar(astar), moves(moves), path_cost(moves.size()), solved(false)
 { }
 
 void node:: printHistory(void) {

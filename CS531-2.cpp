@@ -5,8 +5,18 @@
 #include "state.h"
 #include "node.h"
 
+extern unsigned long long heuristic_time;
 
-bool aStar(state initial, bool admissible) {
+struct result {
+	node final_node; // contains initial state, final state, moves, success/fail
+	unsigned long long cpu_total;
+	unsigned long long cpu_heuristic;
+
+	result(node final_n, unsigned long long heur_t, unsigned long long cpu_t) : final_node(final_n), cpu_total(cpu_t), cpu_heuristic(heur_t) {};
+};
+
+
+node aStar(state initial, bool admissible) {
 	std::deque<node> frontier;	
 	std::vector<state> explored;
 	explored.push_back(initial);
@@ -39,7 +49,7 @@ bool aStar(state initial, bool admissible) {
 
 		// find and expand best node
 		if(frontier.size() == 0) {
-			return false;
+			return current;
 		}
 		std::sort(frontier.begin(), frontier.end());
 		current = frontier.front();
@@ -48,19 +58,21 @@ bool aStar(state initial, bool admissible) {
 	} 
 	// current is our solution! print out initial, moves, and final state
 	current.printHistory();
-	return true;
+	current.solved = true;
+	return current;
 }
 
-bool RBFS(node current, int f_limit, int & f_retval, node & n_retval) {
+node RBFS(node current, int f_limit, int & f_retval) {
 	if(current.current_state.isGoal()) {
 		current.printHistory();
-		return true;
+		current.solved = true;
+		return current;
 	}
 
 	auto succs = current.current_state.successors();
 	if(succs.size() == 0) {
 		f_retval = INT_MAX;
-		return false;
+		return current;
 	}
 
 	std::deque<node> nodes;
@@ -83,32 +95,64 @@ bool RBFS(node current, int f_limit, int & f_retval, node & n_retval) {
 		nodes.back().f_val = std::max(nodes.back().getCost(), current.f_val);
 	}
 
-	bool result = false;
-	while(!result) {
+	node returned = current;
+	while(!returned.solved) {
 		std::sort(nodes.begin(), nodes.end());
 		node & best = nodes.front();
 		if(best.f_val > f_limit) {
 			f_retval = best.f_val;
-			return false;
+			return returned;
 		}
 		int second = nodes[1].f_val;
-		result = RBFS(best, std::min(f_limit, second), f_retval, n_retval);
+		returned = RBFS(best, std::min(f_limit, second), f_retval);
 		best.f_val = f_retval;
 	}
-	return true;
+	// something was returned with solved == true, pass it up the call stack
+	return returned;
+}
+
+node RBFS_start(state initial, bool admissible) {
+	int f_ret;
+	return RBFS(node(initial, initial, admissible, false), INT_MAX, f_ret);
 }
 
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	state test = state(4, 4);
-	//aStar(test, true);
-	//aStar(test, false);
+	/*state test = state(4, 4);
+	aStar(test, true);
+	aStar(test, false);
 
 	int f_ret = INT_MAX;
-	node n_ret = node(test, test, true, false);
+	node n_ret = node(test, test, false, false);
 	n_ret.f_val = n_ret.getCost();
-	RBFS(n_ret, INT_MAX, f_ret, n_ret);
+	RBFS(n_ret, INT_MAX, f_ret, n_ret);*/
+
+	std::vector<result> astar_results;
+	std::vector<result> rbfs_results;
+
+	// permutations of inputs
+	bool heur_vals[2] = {true, false};
+	int size_vals[4] = {4, 5, 6, 7};
+
+	for(auto hv : heur_vals) {
+		for(auto sz : size_vals) {
+			for(int prob_num = 0; prob_num < 20; prob_num++) {
+				heuristic_time = 0;
+				state initial = state(sz, prob_num);
+				clock_t a_start = clock();
+				node a_solution = aStar(initial, hv);
+				astar_results.push_back(result(a_solution, heuristic_time, clock() - a_start));
+				
+				heuristic_time = 0;
+				clock_t b_start = clock();
+				node b_solution = RBFS_start(initial, hv);
+				rbfs_results.push_back(result(b_solution, heuristic_time, clock() - b_start));
+
+			}
+		}
+	}
+
 
 	return 0;
 }

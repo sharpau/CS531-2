@@ -13,9 +13,11 @@ class node {
 
 	std::vector<std::pair<int, int>> moves;
 
+
 public:
 	state current_state;
 	state initial_state;
+	bool solved;
 	int f_val; // RBFS only
 
 	bool operator < (const node& cmp) const;
